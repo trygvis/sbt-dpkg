@@ -1,0 +1,8 @@
+Package: sbt-@SBT_VERSION@
+Section: devel
+Version: @SBT_VERSION@
+Maintainer: Trygve Laugstøl <trygvis@inamo.no>
+Architecture: all
+Depends: sun-java6-jdk | openjdk-7-jdk | openjdk-6-jdk
+Description: Simple Build Tool
+

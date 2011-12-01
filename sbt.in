@@ -1,0 +1,15 @@
+#!/bin/sh
+
+SBT_VERSION=@SBT_VERSION@
+
+JAR=/usr/share/sbt-@SBT_VERSION@/sbt-launch.jar
+
+exec java \
+    $JVM_ARGS \
+    -d64 \
+    -noverify \
+    -Dfile.encoding=UTF8 \
+    -Dsbt.boot.directory=$HOME/.sbt/boot \
+    -Xmx1024M -Xss1M -XX:MaxPermSize=256m \
+    -XX:+CMSClassUnloadingEnabled \
+    -jar "$JAR" "$@"

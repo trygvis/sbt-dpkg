@@ -1,0 +1,126 @@
+#!/bin/bash
+
+set -e
+
+force=false
+
+if [ "$REPO" = "" ]
+then
+  REPO="http://repo.typesafe.com/typesafe/ivy-releases/org.scala-tools.sbt/sbt-launch"
+fi
+
+usage() {
+  echo "usage: $0 OPTIONS" >&2
+  echo "Use $0 -? for usage help" >&2
+  exit 1
+}
+
+find_latest() {
+  echo "Finding latest version from $REPO ..."
+  read version < <(wget -O - -q $REPO | sed -n "s,<a .*>\([0-9][0-9]*\)\.\([0-9][0-9]*\)\.\([0-9][0-9]*\)/</a.*,\1 \2 \3 \1.\2.\3,p" | sort -n -r -k 1 -k 2 -k 3| head -n 1 | cut -f 4 -d " ")
+
+  if [ -z "$version" ]
+  then
+    echo "Unable to find the latest version." >&2
+    exit 1
+  fi
+
+  url="$REPO/$version/sbt-launch.jar"
+}
+
+calculate_package_filename() {
+  # TODO: Add arch to the filename (i386, amd64)
+  repo=repository/debian
+  mkdir -p $repo
+  package_filename=$repo/sbt-$version.deb
+}
+
+build_common() {
+  rm -rf root
+
+  mkdir -p root/usr/share/sbt-$version/
+  mkdir -p root/usr/bin
+  cat sbt.in | sed "s,@SBT_VERSION@,$version," > root/usr/bin/sbt-$version
+  cat sbt+jrebel.in | sed "s,@SBT_VERSION@,$version," > root/usr/bin/sbt-$version+jrebel
+  chmod +x root/usr/bin/*
+  cp download/$version/sbt-launch.jar root/usr/share/sbt-$version/sbt-launch.jar
+}
+
+build_debian() {
+  build_common
+
+  mkdir -p root/DEBIAN
+  cat debian/control.in | \
+    sed "s,@SBT_VERSION@,$version," \
+    > root/DEBIAN/control
+
+  echo > debian/fakeroot.save
+  FAKEROOT="fakeroot -i debian/fakeroot.save -s debian/fakeroot.save"
+  $FAKEROOT -- chown -R root:root root/
+  $FAKEROOT -- chmod go=r `find root -type f`
+  $FAKEROOT -- chmod go=rx `find root/usr/bin -type f`
+  $FAKEROOT -- dpkg-deb -b root $package_filename
+  rm debian/fakeroot.save
+
+  if [ "$update_repository" = 1 ]
+  then
+    (cd $repo && dpkg-scanpackages -m . /dev/null | tee Packages | gzip > Packages.gz )
+  fi
+}
+
+while getopts "v:uF?" flag
+do
+  case "$flag" in
+    v)
+      version=$OPTARG
+      ;;
+    u)
+      update_repository=1
+      ;;
+    F)
+      force="true"
+      ;;
+    ?)
+      less README
+      exit 0
+      ;;
+  esac
+done
+
+if [ -z "$version" ]
+then
+  find_latest
+  echo "The latest version is $version"
+else
+  url="$REPO/$version/sbt-launch.jar"
+fi
+
+calculate_package_filename
+
+if [ -r "$package_filename" ]
+then
+  if [ $force = "false" ]
+  then
+    echo "The requested version ($version) already exist in the repository, add -F to force a re-build of the package" >&2
+    exit 1
+  else
+    echo "WARNING: re-building package for version $version" >&2
+  fi
+fi
+
+mkdir -p download
+
+echo "Downloading version $version..."
+if [ `wget -q -P download/$version -N $url; echo $?` != "0" ]
+then
+  echo "Could not download $url" >&2
+  exit 1
+fi
+
+if [ ! -r download/$version/sbt-launch.jar ]
+then
+  echo "wget didn't place the downloaded file where expected: download/$version/sbt-launch.jar" >&2
+  exit 1
+fi
+
+build_debian

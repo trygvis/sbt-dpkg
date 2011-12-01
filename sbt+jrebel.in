@@ -1,0 +1,15 @@
+#!/bin/sh
+SBT_VERSION=@SBT_VERSION@
+export SBT_VERSION
+
+. $HOME/.jrebel-version
+
+if [ ! -r "$JREBEL_JAR" ]
+then
+  echo "Can't read $JREBEL_JAR. Make sure that $HOME/.jrebel-version sets the environment variable 'JREBEL_JAR" >&2
+  exit 1
+fi
+
+export JVM_ARGS="-javaagent:$JREBEL_JAR $JVM_ARGS"
+
+exec /usr/bin/sbt-@SBT_VERSION
