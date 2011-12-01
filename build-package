@@ -52,7 +52,8 @@ build_debian() {
   mkdir -p root/DEBIAN
   sed "s,@SBT_VERSION@,$version," debian/control.in > root/DEBIAN/control
   sed "s,@SBT_VERSION@,$version," debian/postinst.in > root/DEBIAN/postinst
-  chmod a=rx root/DEBIAN/postinst
+  sed "s,@SBT_VERSION@,$version," debian/prerm.in > root/DEBIAN/prerm
+  chmod a=rx root/DEBIAN/postinst root/DEBIAN/prerm
 
   echo > debian/fakeroot.save
   FAKEROOT="fakeroot -i debian/fakeroot.save -s debian/fakeroot.save"

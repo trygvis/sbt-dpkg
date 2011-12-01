@@ -1,3 +1,5 @@
 #!/bin/sh
 
-update-alternatives --set sbt /usr/bin/sbt-@SBT_VERSION@
+update-alternatives --install /usr/bin/sbt sbt /usr/bin/sbt-@SBT_VERSION@ 10
+
+echo "Rember to update the /usr/bin/sbt symlink with $ update-alternatives --config sbt"
