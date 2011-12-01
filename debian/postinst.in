@@ -1,0 +1,3 @@
+#!/bin/sh
+
+update-alternatives --set sbt /usr/bin/sbt-@SBT_VERSION@

@@ -1,0 +1,7 @@
+*.save
+*~
+*.swp
+root
+download/
+repository
+solaris

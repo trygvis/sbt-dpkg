@@ -50,14 +50,14 @@ build_debian() {
   build_common
 
   mkdir -p root/DEBIAN
-  cat debian/control.in | \
-    sed "s,@SBT_VERSION@,$version," \
-    > root/DEBIAN/control
+  sed "s,@SBT_VERSION@,$version," debian/control.in > root/DEBIAN/control
+  sed "s,@SBT_VERSION@,$version," debian/postinst.in > root/DEBIAN/postinst
+  chmod a=rx root/DEBIAN/postinst
 
   echo > debian/fakeroot.save
   FAKEROOT="fakeroot -i debian/fakeroot.save -s debian/fakeroot.save"
   $FAKEROOT -- chown -R root:root root/
-  $FAKEROOT -- chmod go=r `find root -type f`
+  $FAKEROOT -- chmod go=r `find root/usr -type f`
   $FAKEROOT -- chmod go=rx `find root/usr/bin -type f`
   $FAKEROOT -- dpkg-deb -b root $package_filename
   rm debian/fakeroot.save
