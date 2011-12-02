@@ -32,7 +32,14 @@ calculate_package_filename() {
   # TODO: Add arch to the filename (i386, amd64)
   repo=repository/debian
   mkdir -p $repo
-  package_filename=$repo/sbt-$version.deb
+  count=`find $repo -name sbt-$version-*.deb 2>/dev/null|wc -l`
+  echo $count
+  if [ $count != 0 ]
+  then
+    package_exist=1
+  fi
+  revision=$(($count + 1))
+  package_filename=$repo/sbt-$version-$revision.deb
 }
 
 build_common() {
@@ -50,7 +57,10 @@ build_debian() {
   build_common
 
   mkdir -p root/DEBIAN
-  sed "s,@SBT_VERSION@,$version," debian/control.in > root/DEBIAN/control
+  sed \
+    -e "s,@SBT_VERSION@,$version," \
+    -e "s,@REVISION@,$revision," \
+    debian/control.in > root/DEBIAN/control
   sed "s,@SBT_VERSION@,$version," debian/postinst.in > root/DEBIAN/postinst
   sed "s,@SBT_VERSION@,$version," debian/prerm.in > root/DEBIAN/prerm
   chmod a=rx root/DEBIAN/postinst root/DEBIAN/prerm
@@ -98,7 +108,7 @@ fi
 
 calculate_package_filename
 
-if [ -r "$package_filename" ]
+if [ "$package_exist" = 1 ]
 then
   if [ $force = "false" ]
   then

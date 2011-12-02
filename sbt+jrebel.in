@@ -12,4 +12,4 @@ fi
 
 export JVM_ARGS="-javaagent:$JREBEL_JAR $JVM_ARGS"
 
-exec /usr/bin/sbt-@SBT_VERSION "$@"
+exec /usr/bin/sbt-@SBT_VERSION@ "$@"
